@@ -5,8 +5,6 @@ import os
 
 import pytest
 
-import json
-
 from infernet_ml.utils.service_models import (
     ConvoMessage,
     CSSCompletionParams,
@@ -30,10 +28,7 @@ def test_init(provider: str, endpoint: str) -> None:
     _environ = dict(os.environ)  # or os.environ.copy()
     try:
         os.environ[f"{provider}_API_KEY"] = "test_key"
-        if provider != "CHASMNET":
-            _: CSSInferenceWorkflow = CSSInferenceWorkflow(provider, endpoint)
-        else:
-            _: 
+        _: CSSInferenceWorkflow = CSSInferenceWorkflow(provider, endpoint)
     finally:
         os.environ.clear()
         os.environ.update(_environ)
@@ -64,54 +59,6 @@ def test_completion_inferences(
         )
         req: CSSRequest = CSSRequest(model=model, params=params)
         workflow: CSSInferenceWorkflow = CSSInferenceWorkflow(provider, "completions")
-        workflow.setup()
-        res = workflow.inference(req.model_dump())
-        assert len(res)
-
-
-@pytest.mark.parametrize(
-    "provider, endpoint_id, body",
-    [
-        (
-            "CHASMNET",
-            "111",
-            json.loads('{"input": {"test_input_1": "apple"}}'),
-        ),
-    ],
-)
-def test_chasm_prompt_inferences(
-    provider: str, model: str, messages: list[ConvoMessage]
-) -> None:
-    if os.environ.get(f"{provider}_API_KEY"):
-        params: ChasmPromptParams = ChasmPromptParams(
-            endpoint="prompts", messages=messages
-        )
-        req: ChasmRequest = ChasmRequest(model=model, params=params)
-        workflow: CSSInferenceWorkflow = CSSInferenceWorkflow(provider, "prompt")
-        workflow.setup()
-        res = workflow.inference(req.model_dump())
-        assert len(res)
-
-
-@pytest.mark.parametrize(
-    "provider, endpoint_id, body",
-    [
-        (
-            "CHASMNET",
-            "111",
-            json.loads('{"input": {"test_input_1": "apple"}}'),
-        ),
-    ],
-)
-def test_chasm_workflows_inferences(
-    provider: str, model: str, messages: list[ConvoMessage]
-) -> None:
-    if os.environ.get(f"{provider}_API_KEY"):
-        params: ChasmPromptParams = ChasmPromptParams(
-            endpoint="workflows", messages=messages
-        )
-        req: ChasmRequest = ChasmRequest(model=model, params=params)
-        workflow: CSSInferenceWorkflow = CSSInferenceWorkflow(provider, "workflows")
         workflow.setup()
         res = workflow.inference(req.model_dump())
         assert len(res)

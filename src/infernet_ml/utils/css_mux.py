@@ -9,7 +9,7 @@ as an environment variable as "{provider}_API_KEY".
 
 """
 import os
-from typing import Any, cast, Union
+from typing import Any, cast
 
 import requests
 
@@ -79,7 +79,6 @@ def chasm_net_helper(req: CSSRequest) -> tuple[str, dict[str, str]]:
     # {"input":{}} is the base case where there's no inputs
     match req:
         case CSSRequest(model=model_name, params=ChasmParams(endpoint=endpoint, endpoint_id=endpoint_id, input=input)):
-            # raise ServiceException(f"The input: {input}")
             return f"https://pms.chasm.net/api/{endpoint}/execute/{endpoint_id}", {
                 "input": input,
             }
@@ -156,7 +155,7 @@ def validate(provider: str, endpoint: str) -> None:
         raise ServiceException("Endpoint not supported for your provider!")
 
 
-def css_mux(provider: str, req: Union[CSSRequest]) -> str:
+def css_mux(provider: str, req: CSSRequest) -> str:
     """
     Args:
         provider: Closed AI provider
