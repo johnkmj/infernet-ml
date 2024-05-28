@@ -71,6 +71,16 @@ class CSSEmbeddingParams(BaseModel):
     input: str
 
 
+class ChasmParams(BaseModel):
+    """
+    A Chasm Prompt Param refers to the prompt endpoint
+    """
+
+    endpoint: Union[Literal["prompts"], Literal["workflows"]]
+    endpoint_id: str
+    input: dict[str, Any]
+
+
 class CSSRequest(BaseModel):
     """A CSSRequest, meant for querying closed source models."""
 
@@ -78,6 +88,6 @@ class CSSRequest(BaseModel):
     model: str
     # parameters associated with the request. Can either be a Completion
     # or an Embedding Request
-    params: Union[CSSCompletionParams, CSSEmbeddingParams] = Field(
+    params: Union[CSSCompletionParams, CSSEmbeddingParams, ChasmParams] = Field(
         ..., discriminator="endpoint"
     )

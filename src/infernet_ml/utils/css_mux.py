@@ -9,7 +9,7 @@ as an environment variable as "{provider}_API_KEY".
 
 """
 import os
-from typing import Any, cast
+from typing import Any, cast, Union
 
 import requests
 
@@ -17,6 +17,7 @@ from infernet_ml.utils.service_models import (
     CSSCompletionParams,
     CSSEmbeddingParams,
     CSSRequest,
+    ChasmParams,
 )
 from infernet_ml.workflows.exceptions import RetryableException, ServiceException
 
@@ -71,6 +72,21 @@ def goose_ai_helper(req: CSSRequest) -> tuple[str, dict[str, Any]]:
             raise ServiceException(f"Unsupported request {req}")
 
 
+def chasm_net_helper(req: CSSRequest) -> tuple[str, dict[str, str]]:
+    """
+    Returns base url, processed input.
+    """
+    # {"input":{}} is the base case where there's no inputs
+    match req:
+        case CSSRequest(model=model_name, params=ChasmParams(endpoint=endpoint, endpoint_id=endpoint_id, input=input)):
+            # raise ServiceException(f"The input: {input}")
+            return f"https://pms.chasm.net/api/{endpoint}/execute/{endpoint_id}", {
+                "input": input,
+            }
+        case _:
+            raise ServiceException(f"Unsupported request {req}")
+
+
 PROVIDERS: dict[str, Any] = {
     "OPENAI": {
         "input_func": open_ai_helper,
@@ -103,6 +119,19 @@ PROVIDERS: dict[str, Any] = {
             }
         },
     },
+    "CHASMNET": {
+        "input_func": chasm_net_helper,
+        "endpoints": {
+            "prompts": {
+                "real_endpoint": "",
+                "proc": lambda result: result["result"]["content"],
+            },
+            "workflows": {
+                "real_endpoint": "",
+                "proc": lambda result: result["result"]["content"],
+            },
+        },
+    },
 }
 
 
@@ -127,7 +156,7 @@ def validate(provider: str, endpoint: str) -> None:
         raise ServiceException("Endpoint not supported for your provider!")
 
 
-def css_mux(provider: str, req: CSSRequest) -> str:
+def css_mux(provider: str, req: Union[CSSRequest]) -> str:
     """
     Args:
         provider: Closed AI provider
@@ -166,6 +195,9 @@ def css_mux(provider: str, req: CSSRequest) -> str:
                     raise RetryableException(result.text)
             case "PERPLEXITYAI":
                 if result.status_code == 429:
+                    raise RetryableException(result.text)
+            case "CHASMNET":
+                if result.status_code == 429 or result.status_code == 500:
                     raise RetryableException(result.text)
             case _:
                 raise ServiceException(result.text)
